@@ -39,7 +39,7 @@ module KintoneSDK
       response = @connection.post do |request|
         request.url url
         request.headers['Content-Type'] = 'application/json'
-        request.body = body.to_json
+        request.body = payload.to_json
       end
       # raise 起こせー
       response
@@ -49,7 +49,7 @@ module KintoneSDK
       response = @connection.put do |request|
         request.url url
         request.headers['Content-Type'] = 'application/json'
-        request.body = body.to_json
+        request.body = payload.to_json
       end
       # raise 起こせー
       response
