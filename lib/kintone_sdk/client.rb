@@ -3,6 +3,7 @@ require 'faraday_middleware'
 require 'base64'
 require 'json'
 require 'kintone_sdk/client/record'
+require 'kintone_sdk/errors'
 
 module KintoneSDK
 
@@ -20,7 +21,6 @@ module KintoneSDK
       yield(@connection) if block_given?
     end
 
-    # とりあえず
     def record
       @record ||= KintoneSDK::Client::Record.new(self)
     end
@@ -31,7 +31,7 @@ module KintoneSDK
         request.headers['Content-Type'] = 'application/json'
         request.body = params.to_json
       end
-      # raise 起こせー
+      raise KintoneSDK::KintoneHTTPError.new(response.body, response.status) if response.status != 200
       response
     end
 
@@ -41,7 +41,7 @@ module KintoneSDK
         request.headers['Content-Type'] = 'application/json'
         request.body = payload.to_json
       end
-      # raise 起こせー
+      raise KintoneSDK::KintoneHTTPError.new(response.body, response.status) unless response.success?
       response
     end
 
@@ -49,9 +49,10 @@ module KintoneSDK
       response = @connection.put do |request|
         request.url url
         request.headers['Content-Type'] = 'application/json'
+        p payload
         request.body = payload.to_json
       end
-      # raise 起こせー
+      raise KintoneSDK::KintoneHTTPError.new(response.body, response.status) unless response.success?
       response
     end
 
@@ -61,7 +62,7 @@ module KintoneSDK
         request.headers['Content-Type'] = 'application/json'
         request.body = payload.to_json
       end
-      # raise 起こせー
+      raise KintoneSDK::KintoneHTTPError.new(response.body, response.status) unless response.success?
       response
     end
 

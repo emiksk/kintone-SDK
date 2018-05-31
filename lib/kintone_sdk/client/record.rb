@@ -1,3 +1,5 @@
+require 'kintone_sdk/resource'
+
 module KintoneSDK
 
   class Client
@@ -15,13 +17,26 @@ module KintoneSDK
 
       def get(app_id, record_id)
         response = @client.get(@url, app: app_id, id: record_id)
-        # KintoneSDK::Resource::Record.new(@client, response.body)
+        create_record_from_response(app_id, response.body)
       end
 
-      def update(app_id, payload, options = {})
-        body = convert_for_kintone(app_id, payload, options)
-        response = @client.put(@url, body)
-        # KintoneSDK::Resource::Record.new(@client, response.body)
+      def post(app_id, record, options = {})
+        if record.is_a?(KintoneSDK::Resource::Record)
+          payload = record.request_body_format
+        end
+
+        @client.post(@url, payload)
+      end
+
+      def update(app_id, record, options = {})
+        if record.is_a?(KintoneSDK::Resource::Record)
+          payload = record.request_body_format(for_update = true)
+        else
+          payload = convert_for_kintone(app_id, payload, options)
+        end
+
+        response = @client.put(@url, payload)
+        # FIXME: Must change revision in Record object
       end
 
       def delete(app_id, record_id)
@@ -31,6 +46,14 @@ module KintoneSDK
         @client.delete(url, app: app_id, ids: [record_id])
       end
 
+      def new(app_id, options = {})
+        record = KintoneSDK::Resource::Record.new(app_id, options.merge(client: self))
+
+        yield(record) if block_given?
+
+        record
+      end
+
       private
 
       # This may be moved to Base class if other resourses are implemented
@@ -38,7 +61,15 @@ module KintoneSDK
         KintoneSDK::Client::BASE_PATH + self.class.path
       end
 
-      # to be continue...
+      def create_record_from_response(app_id, body)
+        self.new(app_id) do |record|
+          body["record"].each do |key, field|
+            record.set_field(key, field["value"], field["type"])
+          end
+        end
+      end
+
+      # ugly implemention !
       def convert_for_kintone(app_id, hash, options = {})
         body = { app: app_id, record: {} }
 

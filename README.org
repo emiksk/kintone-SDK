@@ -60,7 +60,7 @@ record["title"] # => "Creating kintone SDK !!"
 *** レコードの登録
 アプリ番号とレコード情報を指定し，レコードを新規登録する．
 
-+ KintoneSDK::Client::Record.new(app_id, options)
++ KintoneSDK::Client::Record#new(app_id, options)
   + 引数:
     1. app_id: アプリの ID
     2. options:
@@ -99,7 +99,7 @@ record.register
        - update_key: レコード ID の代わりにキーとして用いるフィールドコードと値の組
          - {"field_code": "value"}
        - space_id: ゲストスペースの ID
-  + 返り値: KintoneSDK::Resource::Record
+  + 返り値: Faraday::Response
   + 例外:
     1. KintoneSDK::KintoneHTTPError
        - ステータスコードが2xx以外の時に発生
