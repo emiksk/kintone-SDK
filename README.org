@@ -18,8 +18,8 @@ Ruby での kintone API 連携のための SDK
     1. auth_params
        - user と password を指定するとパスワードベースの認証
        - token を指定するとトークンベースの認証
-       - user と password がどちらも指定されている場合は，パスワードベースの認証を優先
-       - トークンベースの認証の場合，アプリ単位の API のみ利用可能
+       - user, password, および token のすべてがどちらも指定されている場合は，パスワードベースの認証を優先
+       - トークンベースの認証の場合，トークンを発行したアプリのみ API を利用できる，それ以外のアプリでは認証エラーが発生
 
  #+BEGIN_SRC
 require 'kintone_sdk'
@@ -36,14 +36,19 @@ client = KintoneSDK::Client.new("example.cybozu.com", auth_params)
 *** レコードの取得
 アプリ番号とレコード番号を指定し，特定のレコードを取得(1件)する．
 
-+ KintoneSDK::Client::Record#get(app_id, record_id)
++ KintoneSDK::Client::Record#get(app_id, record_id, options = {})
   + 引数:
     1. app_id: アプリの ID
     2. record_id: レコードの ID
+    3. options:
+       - space_id: ゲストスペースの ID
   + 返り値: KintoneSDK::Resource::Record
   + 例外:
     1. KintoneSDK::KintoneHTTPError
        - ステータスコードが2xx以外の時に発生
+       - エラーの情報として，ステータスコードとエラーメッセージを保持
+  + 制限事項
+    - ゲストスペースのアプリの場合は，options にてスペース ID を指定
 
  #+BEGIN_SRC
 app_id = 1; record_id = 10
@@ -55,19 +60,21 @@ record["title"] # => "Creating kintone SDK !!"
 *** レコードの登録
 アプリ番号とレコード情報を指定し，レコードを新規登録する．
 
-+ KintoneSDK::Client::Record.new(app_id)
++ KintoneSDK::Client::Record.new(app_id, options)
   + 引数:
     1. app_id: アプリの ID
+    2. options:
+       - space_id: ゲストスペースの ID
   + 返り値: KintoneSDK::Resource::Record
-  + 例外:
-    1. KintoneSDK::KintoneHTTPError
-       - ステータスコードが2xx以外の時に発生
+  + 制限事項
+    - ゲストスペースのアプリの場合は，options にてスペース ID を指定
 
 + KintoneSDK::Resource::Record#register
   + 返り値: Faraday::Response
   + 例外:
     1. KintoneSDK::KintoneHTTPError
        - ステータスコードが2xx以外の時に発生
+       - エラーの情報として，ステータスコードとエラーメッセージを保持
 
  #+BEGIN_SRC
 app_id = 1
@@ -85,13 +92,14 @@ record.register
     2. payload: レコードの更新内容(フィールドコードと値の組の集合)
        - フィールドと値が1対1の場合:  {field_code: "value"}
        - フィールド の種類がテーブルの場合:
-         {table: [id:  1,  value: {field_code: "value"}]}
+         {table: [{id:  1,  value: {field_code: "value"}}, ...]}
     3. options: レコードの更新に関するオプション
        - record_id: レコードの ID
        - revision: レビジョンの数
        - update_key: レコード ID の代わりにキーとして用いるフィールドコードと値の組
          - {"field_code": "value"}
-  + 返り値: Faraday::Response # Resource::Record を返したほうがいい
+       - space_id: ゲストスペースの ID
+  + 返り値: KintoneSDK::Resource::Record
   + 例外:
     1. KintoneSDK::KintoneHTTPError
        - ステータスコードが2xx以外の時に発生
@@ -100,12 +108,14 @@ record.register
        - 重複禁止
        - 文字列1行または数値
        - record_id との併用不可(併用した場合は record_id 優先)
+    2. ゲストスペースのアプリの場合は，options にてスペース ID を指定
 
 + KintoneSDK::Resource::Record#update
   + 返り値: Faraday::Response
   + 例外:
     1. KintoneSDK::KintoneHTTPError
        - ステータスコードが2xx以外の時に発生
+       - エラーの情報として，ステータスコードとエラーメッセージを保持
 
  #+BEGIN_SRC
 app_id = 1; record_id = 10
@@ -123,19 +133,26 @@ record.update
 *** レコードの削除
 アプリ番号とレコード番号を指定し，レコードを削除する．
 
-+ KintoneSDK::Client::Record#delete(app_id, record_id)
++ KintoneSDK::Client::Record#delete(app_id, record_id, options)
   + 引数:
     1. app_id: アプリの ID
     2. record_id: レコードの ID
+    3. options:
+       - space_id: ゲストスペースの ID
   + 返り値: Faraday::Response
   + 例外:
     1. KintoneSDK::KintoneHTTPError
        - ステータスコードが2xx以外の時に発生
+       - エラーの情報として，ステータスコードとエラーメッセージを保持
+  + 制限事項
+    - ゲストスペースのアプリの場合は，options にてスペース ID を指定
+
 + KintoneSDK::Resource::Record#delete
   + 返り値: Faraday::Response
   + 例外:
     1. KintoneSDK::KintoneHTTPError
        - ステータスコードが2xx以外の時に発生
+       - エラーの情報として，ステータスコードとエラーメッセージを保持
 
  #+BEGIN_SRC
 app_id = 1; record_id = 10
