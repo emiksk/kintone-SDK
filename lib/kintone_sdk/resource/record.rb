@@ -48,7 +48,7 @@ module KintoneSDK
       end
 
       def field_codes
-        @fields.keys
+        @fields.map { |k, v| v.type == :SUBTABLE ? [k, v.field_codes] : k }.flatten
       end
 
       def field_values
@@ -116,6 +116,10 @@ module KintoneSDK
           @rows.map(&:value)
         end
 
+        def field_codes
+          @rows.first.field_codes
+        end
+
         def each
           @rows.each do |row|
             yield row
@@ -164,7 +168,11 @@ module KintoneSDK
         attr_reader :id
 
         def value
-          @fields.map(&:value)
+          @fields.map { |k, v| v.value }
+        end
+
+        def field_codes
+          @fields.keys
         end
 
         def each
