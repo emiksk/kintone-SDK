@@ -83,6 +83,9 @@ record.register
   + 引数:
     1. app_id: アプリの ID
     2. payload: レコードの更新内容(フィールドコードと値の組の集合)
+       - フィールドと値が1対1の場合:  {field_code: "value"}
+       - フィールド の種類がテーブルの場合:
+         {table: [id:  1,  value: {field_code: "value"}]}
     3. options: レコードの更新に関するオプション
        - record_id: レコードの ID
        - revision: レビジョンの数
