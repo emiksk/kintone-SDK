@@ -13,11 +13,14 @@ Ruby での kintone API 連携のための SDK
        - user: ユーザ名
        - password: パスワード
        - token: アプリのアクセストークン
+       - basic_user: BASIC 認証のユーザ名
+       - basic_password: BASIC 認証のパスワード
   + 返り値: KintoneSDK::Client
   + 制限事項
     1. auth_params
        - user と password を指定するとパスワードベースの認証
        - token を指定するとトークンベースの認証
+       - basic_user と basic_password を指定すると別途 BASIC 認証を行う
        - user, password, および token のすべてがどちらも指定されている場合は，パスワードベースの認証を優先
        - トークンベースの認証の場合，トークンを発行したアプリのみ API を利用できる，それ以外のアプリでは認証エラーが発生
 

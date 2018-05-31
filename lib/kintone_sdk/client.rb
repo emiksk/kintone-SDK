@@ -69,10 +69,16 @@ module KintoneSDK
     private
 
     def auth_headers(params)
-      if params[:user] && params[:password]
-        { 'X-Cybozu-Authorization' => Base64.strict_encode64("#{params[:user]}:#{params[:password]}") }
-      else
-        { 'X-Cybozu-API-Token' => params[:token] }
+      {}.tap do |headers|
+        if params[:basic_user] && params[:basic_password]
+          headers['Authorization'] = "Basic " + Base64.strict_encode64("#{params[:basic_user]}:#{params[:basic_password]}")
+        end
+
+        if params[:user] && params[:password]
+          headers[ 'X-Cybozu-Authorization'] = Base64.strict_encode64("#{params[:user]}:#{params[:password]}")
+        else
+          headers['X-Cybozu-API-Token'] = params[:token]
+        end
       end
     end
 

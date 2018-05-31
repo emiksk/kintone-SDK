@@ -113,7 +113,7 @@ module KintoneSDK
         attr_reader :type
 
         def value
-          @rows
+          @rows.map(&:value)
         end
 
         def each
@@ -164,7 +164,7 @@ module KintoneSDK
         attr_reader :id
 
         def value
-          @fields
+          @fields.map(&:value)
         end
 
         def each
