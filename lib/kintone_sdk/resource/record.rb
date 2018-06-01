@@ -16,25 +16,26 @@ module KintoneSDK
             :CATEGORY,
             :CALC,
             :STATUS_ASSIGNEE
-          ]
+          ].freeze
 
       def initialize(app_id, options = {})
         @app_id = app_id
         @client = options.delete(:client)
+        @guest_space_id = options.delete(:guest_space_id)
         @options = options
         @fields = {}
       end
+      attr_accessor :app_id, :guest_space_id
 
       def id
-        @id ||= self[:$id]
+        self[:$id]
       end
 
       def [](key)
-        @fields[key.to_s].value
+        @fields[key.to_s]&.value
       end
 
       def []=(key, val)
-        # FIXME: This should raise exception
         raise KintoneSDK::ReadOnlyError.new(key, @fields[key.to_s]&.type) if READONLY_FIELDS.include?(@fields[key.to_s]&.type)
         @fields[key.to_s] = Field.create(val)
       end
@@ -44,7 +45,7 @@ module KintoneSDK
       end
 
       def set_field(key, value, type)
-        @fields[key] = Field.create(value, type.to_sym)
+        @fields[key.to_s] = Field.create(value, type.to_sym)
       end
 
       def field_codes
@@ -56,17 +57,20 @@ module KintoneSDK
       end
 
       def register
-        # if this record already exist in kintone, this can't be registered
+        # if this record already exist in kintone, it can't be registered
         raise KintoneSDK::ExistedRecordError.new(@app_id, id) if id
-        @client.post(@app_id, self)
+        response = @client.post(@app_id, self, guest_space_id: @guest_space_id)
+        sync(:register, response)
       end
 
       def update
-        @client.update(@app_id, self)
+        response = @client.update(@app_id, self, guest_space_id: @guest_space_id)
+        sync(:update, response)
       end
 
       def delete
-        @client.delete(@app_id, id)
+        response = @client.delete(@app_id, id, guest_space_id: @guest_space_id)
+        sync(:delete, response)
       end
 
       def request_body_format(for_update = nil)
@@ -76,12 +80,27 @@ module KintoneSDK
           @fields.each do |key, field|
             next if READONLY_FIELDS.include?(field.type)
             hash[:record][key] = field.request_body_format(for_update)
-            # hash[:record][key] = {value: field.value}
           end
         end
       end
 
-      # FIXME: Implement table class!
+      private
+
+      def sync(method, response)
+        body = response.body
+        case(method)
+        when :register
+          set_field(:$id, body["id"], "__ID__")
+          set_field(:$revision, body["revision"], "__REVISION__")
+        when :update
+          set_field(:$revision, body["revision"], "__REVISION__")
+        when :delete
+          set_field(:$id, nil, "__ID__")
+        end
+
+        self
+      end
+
       class Field
         def self.create(value, type = nil)
           if value.is_a?(Array) && (type == nil || type == :SUBTABLE)
@@ -91,9 +110,9 @@ module KintoneSDK
           end
         end
 
-        def initialize(val, type = nil)
+        def initialize(val, type = :UNKNOWN)
           @value = val
-          @type = type || :UNKNOWN
+          @type = type
         end
         attr_accessor :value, :type
 
@@ -157,7 +176,6 @@ module KintoneSDK
 
       end # class Table
 
-      # FIXME: This class shold extend Record class
       class Row
         include Enumerable
 

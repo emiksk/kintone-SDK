@@ -5,18 +5,21 @@ module KintoneSDK
   class Client
 
     class Record
-
-      def self.path
-        '/record.json'
-      end
+      METHOD_PATH =
+        {
+          get: "/record.json",
+          post: "/record.json",
+          put: "/record.json",
+          delete: "/records.json"
+        }.freeze
 
       def initialize(client)
         @client = client
-        @url = get_url
       end
 
-      def get(app_id, record_id)
-        response = @client.get(@url, app: app_id, id: record_id)
+      def get(app_id, record_id, options = {})
+        url = get_url(:get, options[:guest_space_id])
+        response = @client.get(url, app: app_id, id: record_id)
         create_record_from_response(app_id, response.body)
       end
 
@@ -25,24 +28,24 @@ module KintoneSDK
           payload = record.request_body_format
         end
 
-        @client.post(@url, payload)
+        url = get_url(:post, options[:guest_space_id])
+        @client.post(url, payload)
       end
 
       def update(app_id, record, options = {})
         if record.is_a?(KintoneSDK::Resource::Record)
           payload = record.request_body_format(for_update = true)
         else
-          payload = convert_for_kintone(app_id, payload, options)
+          payload = convert_for_kintone(app_id, record, options)
         end
 
-        response = @client.put(@url, payload)
+        url = get_url(:put, options[:guest_space_id])
+        response = @client.put(url, payload)
         # FIXME: Must change revision in Record object
       end
 
-      def delete(app_id, record_id)
-        # Oh My kintone API !!!!!!!!!!
-        url = @url.gsub(/record.json$/, "records.json")
-
+      def delete(app_id, record_id, options = {})
+        url = get_url(:delete, options[:guest_space_id])
         @client.delete(url, app: app_id, ids: [record_id])
       end
 
@@ -56,9 +59,18 @@ module KintoneSDK
 
       private
 
-      # This may be moved to Base class if other resourses are implemented
-      def get_url
-        KintoneSDK::Client::BASE_PATH + self.class.path
+      def get_url(method, guest_space_id = nil)
+        if guest_space_id
+          base_path = KintoneSDK::Client::PRODUCT_CODE +
+                      "/guest" +
+                      "/" + guest_space_id.to_s +
+                      KintoneSDK::Client::API_VERSION
+        else
+          base_path = KintoneSDK::Client::PRODUCT_CODE +
+                      KintoneSDK::Client::API_VERSION
+        end
+
+        base_path + METHOD_PATH[method]
       end
 
       def create_record_from_response(app_id, body)
@@ -69,7 +81,6 @@ module KintoneSDK
         end
       end
 
-      # ugly implemention !
       def convert_for_kintone(app_id, hash, options = {})
         body = { app: app_id, record: {} }
 
@@ -83,27 +94,22 @@ module KintoneSDK
         body[:revision] = options{:revision} if options[:revision]
 
         # for fields
-        hash.each do |field_code, value|
-          body[:record][field_code] =
-            if value.is_a?(Array)
-              # if  field type is table, value contains id, field_codes and value in table
-              {}.tap do |table_value|
-                table_value[:value] = value.map do |el|
-                  {}.tap do |hash|
-                    hash[:id] = el[:id]
-                    hash[:value] = {}
-                    el[:value].each do |tf_code, val|
-                      hash[:value][tf_code] = {value: val}
-                    end
-                  end
-                end
-              end
-            else
-              {value: value}
-            end
-        end
+        body[:record] = fields_request(hash)
 
         body
+      end
+
+      def fields_request(fields)
+        fields.merge(fields) do |code, value|
+          if value.is_a?(Array)
+            rows = value.map do |row|
+              { id: row[:id], value: fields_request(row[:value]) }
+            end
+            { value: rows }
+          else
+            {value: value}
+          end
+        end
       end
 
     end # class Record

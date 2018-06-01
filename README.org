@@ -23,6 +23,7 @@ Ruby での kintone API 連携のための SDK
        - basic_user と basic_password を指定すると別途 BASIC 認証を行う
        - user, password, および token のすべてがどちらも指定されている場合は，パスワードベースの認証を優先
        - トークンベースの認証の場合，トークンを発行したアプリのみ API を利用できる，それ以外のアプリでは認証エラーが発生
+       - user と password が揃ってない，かつ token も存在しない場合，例外(InvalidAuthParamsError)が発生
 
  #+BEGIN_SRC
 require 'kintone_sdk'
@@ -44,7 +45,7 @@ client = KintoneSDK::Client.new("example.cybozu.com", auth_params)
     1. app_id: アプリの ID
     2. record_id: レコードの ID
     3. options:
-       - space_id: ゲストスペースの ID
+       - guest_space_id: ゲストスペースの ID
   + 返り値: KintoneSDK::Resource::Record
   + 例外:
     1. KintoneSDK::KintoneHTTPError
@@ -67,13 +68,13 @@ record["title"] # => "Creating kintone SDK !!"
   + 引数:
     1. app_id: アプリの ID
     2. options:
-       - space_id: ゲストスペースの ID
+       - guest_space_id: ゲストスペースの ID
   + 返り値: KintoneSDK::Resource::Record
   + 制限事項
     - ゲストスペースのアプリの場合は，options にてスペース ID を指定
 
 + KintoneSDK::Resource::Record#register
-  + 返り値: Faraday::Response
+  + 返り値: KintoneSDK::Resource::Record
   + 例外:
     1. KintoneSDK::KintoneHTTPError
        - ステータスコードが2xx以外の時に発生
@@ -101,7 +102,7 @@ record.register
        - revision: レビジョンの数
        - update_key: レコード ID の代わりにキーとして用いるフィールドコードと値の組
          - {"field_code": "value"}
-       - space_id: ゲストスペースの ID
+       - guest_space_id: ゲストスペースの ID
   + 返り値: Faraday::Response
   + 例外:
     1. KintoneSDK::KintoneHTTPError
@@ -141,7 +142,7 @@ record.update
     1. app_id: アプリの ID
     2. record_id: レコードの ID
     3. options:
-       - space_id: ゲストスペースの ID
+       - guest_space_id: ゲストスペースの ID
   + 返り値: Faraday::Response
   + 例外:
     1. KintoneSDK::KintoneHTTPError
@@ -174,8 +175,14 @@ record.delete
     + KintoneSDK::Resource::Record#[], #[]=
   + 以下の種類のフィールドを変更しようとした場合，例外が発生(KintoneSDK::ReadOnlyError)
     1. レコード番号
-    2. ルックアップフィールドによって値が入力されるフィールド
-    3. カテゴリー
-    4. 計算
-    5. ステータス
-    6. 作業者
+    2. レコードID
+    3. リビジョン
+    4. カテゴリー
+    5. 計算
+    6. ステータス
+    7. 作業者
+    8. 作成者
+    9. 更新者
+    10. 作成時間
+    11. 更新日時
+  + ルックアップフィールドによって値が入力されるフィールドを含む登録/更新のリクエストを行うと例外(KintoneSDK::KintoneHTTPError)が発生

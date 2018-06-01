@@ -8,7 +8,8 @@ require 'kintone_sdk/errors'
 module KintoneSDK
 
   class Client
-    BASE_PATH = '/k/v1'
+    PRODUCT_CODE = '/k'
+    API_VERSION = '/v1'
 
     def initialize(domain, auth_params = {})
       @connection =  Faraday.new(url: "https://#{domain}", headers: auth_headers(auth_params)) do |builder|
@@ -31,7 +32,7 @@ module KintoneSDK
         request.headers['Content-Type'] = 'application/json'
         request.body = params.to_json
       end
-      raise KintoneSDK::KintoneHTTPError.new(response.body, response.status) if response.status != 200
+      raise KintoneSDK::KintoneHTTPError.new(response.body, response.status) unless response.success?
       response
     end
 
@@ -49,7 +50,6 @@ module KintoneSDK
       response = @connection.put do |request|
         request.url url
         request.headers['Content-Type'] = 'application/json'
-        p payload
         request.body = payload.to_json
       end
       raise KintoneSDK::KintoneHTTPError.new(response.body, response.status) unless response.success?
@@ -70,14 +70,17 @@ module KintoneSDK
 
     def auth_headers(params)
       {}.tap do |headers|
-        if params[:basic_user] && params[:basic_password]
+        if params[:basic_user] || params[:basic_password]
+          raise KintoneSDK::InvalidBasicAuthParamsError.new(params) unless params[:basic_user] && params[:basic_password]
           headers['Authorization'] = "Basic " + Base64.strict_encode64("#{params[:basic_user]}:#{params[:basic_password]}")
         end
 
         if params[:user] && params[:password]
           headers[ 'X-Cybozu-Authorization'] = Base64.strict_encode64("#{params[:user]}:#{params[:password]}")
-        else
+        elsif params[:token]
           headers['X-Cybozu-API-Token'] = params[:token]
+        else
+          raise KintoneSDK::InvalidAuthParamsError.new(params)
         end
       end
     end

@@ -24,7 +24,7 @@ module KintoneSDK
     end
   end # class ReadOnlyError
 
-    class ExistedRecordError < StandardError
+  class ExistedRecordError < StandardError
     attr_reader :app_id, :record_id
 
     def initialize(app_id, record_id)
@@ -32,6 +32,28 @@ module KintoneSDK
       @record_id = record_id
       super(format("This record(ID: %s in APP ID: %s) is already existed in kintone.", @record_id, @app_id))
     end
-  end # class ReadOnlyError
+  end # class ExistedRecordError
+
+  class InvalidAuthParamsError < StandardError
+    attr_reader :user, :password, :token
+
+    def initialize(params)
+      @user = params[:user]
+      @password = params[:password]
+      @token = params[:token]
+      super("Not exist (user, password) and token")
+    end
+  end # class InvalidAuthParamsError
+
+  class InvalidBasicAuthParamsError < StandardError
+    attr_reader :basic_user, :basic_password
+
+    def initialize(params)
+      @user = params[:user]
+      @password = params[:password]
+      @token = params[:token]
+      super("Not exist basic_user nor basic_password")
+    end
+  end # class InvalidBasicAuthParamsError
 
 end # module KintoneSDK
