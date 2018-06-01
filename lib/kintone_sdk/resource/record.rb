@@ -1,3 +1,7 @@
+require 'kintone_sdk/resource/field'
+require 'kintone_sdk/resource/table'
+require 'kintone_sdk/resource/row'
+
 module KintoneSDK
 
   module Resource
@@ -100,136 +104,6 @@ module KintoneSDK
 
         self
       end
-
-      class Field
-        def self.create(value, type = nil)
-          if value.is_a?(Array) && (type == nil || type == :SUBTABLE)
-            Table.new(value, type)
-          else
-            Field.new(value, type)
-          end
-        end
-
-        def initialize(val, type = :UNKNOWN)
-          @value = val
-          @type = type
-        end
-        attr_accessor :value, :type
-
-        def request_body_format(for_update = nil)
-          {value: @value}
-        end
-
-      end # class Field
-
-      class Table
-        include Enumerable
-
-        def initialize(rows, type = nil)
-          @type = type || :SUBTABLE
-          @rows = parse_rows(rows)
-        end
-        attr_reader :type
-
-        def value
-          @rows.map(&:value)
-        end
-
-        def field_codes
-          @rows.first.field_codes
-        end
-
-        def each
-          @rows.each do |row|
-            yield row
-          end
-        end
-
-        def [](idx)
-          @rows[idx]
-        end
-
-        def []=(idx, val)
-          @rows[idx] = Row.new(val)
-        end
-
-        def get_row_by_id(id)
-          @rows.find { |el| el.id == id  }
-        end
-
-        def set_row_by_id(id, val)
-          row = get_row_by_id(id)
-          row = val
-        end
-
-        def request_body_format(for_update)
-          {value: @rows.map { |row| row.request_body_format(for_update) } }
-        end
-
-        private
-
-        def parse_rows(rows)
-          rows.map do |row|
-            Row.new(row)
-          end
-        end
-
-      end # class Table
-
-      class Row
-        include Enumerable
-
-        def initialize(row)
-          @id =row["id"]
-          @fields = parse_fields(row["value"])
-        end
-        attr_reader :id
-
-        def value
-          @fields.map { |k, v| v.value }
-        end
-
-        def field_codes
-          @fields.keys
-        end
-
-        def each
-          @fields.each do |key, value|
-            yield key, value
-          end
-        end
-
-        def [](key)
-          @fields[key.to_s]
-        end
-
-        def []=(key, val)
-          # raise KintoneSDK::TableInTableError.new id val.is_a?(Array)
-          @fields[key.to_s] = Field.new(val)
-        end
-
-        def request_body_format(for_update)
-          {}.tap do |hash|
-            hash[:id] = @id if for_update
-            hash[:value] = {}.tap do |h|
-              @fields.each do |key, field|
-                h[key] = field.request_body_format
-              end
-            end
-          end
-        end
-
-        private
-
-        def parse_fields(fields)
-          {}.tap do |hash|
-            fields.each do |key, field|
-              hash[key.to_s] = Field.new(field["value"], field["type"]&.to_sym)
-            end
-          end
-        end
-
-      end # class Row
 
     end # class Record
 
