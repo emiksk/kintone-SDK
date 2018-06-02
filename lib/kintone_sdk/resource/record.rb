@@ -1,12 +1,18 @@
+require 'kintone_sdk/resource/fields'
 require 'kintone_sdk/resource/field'
 require 'kintone_sdk/resource/table'
 require 'kintone_sdk/resource/row'
+
+require 'forwardable'
 
 module KintoneSDK
 
   module Resource
 
     class Record
+
+      extend Forwardable
+
       READONLY_FIELDS =
           [
             :RECORD_NUMBER,
@@ -27,37 +33,15 @@ module KintoneSDK
         @client = options.delete(:client)
         @guest_space_id = options.delete(:guest_space_id)
         @options = options
-        @fields = {}
+        @fields = Fields.new
       end
       attr_accessor :app_id, :guest_space_id
 
+      def_delegators :@fields, :[], :[]=, :get_field, :set_field,
+                     :field_codes, :field_values
+
       def id
-        self[:$id]
-      end
-
-      def [](key)
-        @fields[key.to_s]&.value
-      end
-
-      def []=(key, val)
-        raise KintoneSDK::ReadOnlyError.new(key, @fields[key.to_s]&.type) if READONLY_FIELDS.include?(@fields[key.to_s]&.type)
-        @fields[key.to_s] = Field.create(val)
-      end
-
-      def get_field(key)
-        @fields[key.to_s]
-      end
-
-      def set_field(key, value, type)
-        @fields[key.to_s] = Field.create(value, type.to_sym)
-      end
-
-      def field_codes
-        @fields.map { |k, v| v.type == :SUBTABLE ? [k, v.field_codes] : k }.flatten
-      end
-
-      def field_values
-        @fields.values.map(&:value)
+        @fields[:$id]
       end
 
       def register

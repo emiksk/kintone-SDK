@@ -3,6 +3,7 @@ module KintoneSDK
   module Resource
 
     class Row
+
       include Enumerable
 
       def initialize(row)
