@@ -6,14 +6,19 @@ module KintoneSDK
 
       include Enumerable
 
-      def initialize(rows, type = nil)
+      def initialize(code, rows, type = nil)
+        @table_code = code
         @type = type || :SUBTABLE
         @rows = parse_rows(rows)
       end
-      attr_reader :type
+      attr_reader :table_code, :type
 
       def value
         @rows.map(&:value)
+      end
+
+      def field_code
+        [@table_code, field_codes]
       end
 
       def field_codes

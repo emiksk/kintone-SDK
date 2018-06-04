@@ -17,7 +17,7 @@ module KintoneSDK
       end
 
       def field_codes
-        @fields.keys
+        @fields.field_codes
       end
 
       def each
@@ -32,7 +32,7 @@ module KintoneSDK
 
       def []=(key, val)
         # raise KintoneSDK::TableInTableError.new id val.is_a?(Array)
-        @fields[key.to_s] = Field.new(val)
+        @fields[key.to_s] = Field.new(key.to_s, val)
       end
 
       def request_body_format(for_update)
@@ -48,12 +48,12 @@ module KintoneSDK
 
       private
 
-      def parse_fields(fields)
-        {}.tap do |hash|
-          fields.each do |key, field|
-            hash[key.to_s] = Field.new(field["value"], field["type"]&.to_sym)
-          end
+      def parse_fields(hash)
+        fields = Fields.new
+        hash.each do |key, field|
+          fields.set_field(key.to_s, field["value"], field["type"]&.to_sym)
         end
+        fields
       end
 
     end # class Row

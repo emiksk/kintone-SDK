@@ -4,19 +4,20 @@ module KintoneSDK
 
     class Field
 
-      def self.create(value, type = nil)
+      def self.create(code, value, type = nil)
         if value.is_a?(Array) && (type == nil || type == :SUBTABLE)
-          Table.new(value, type)
+          Table.new(code, value, type)
         else
-          Field.new(value, type)
+          Field.new(code, value, type)
         end
       end
 
-      def initialize(val, type = :UNKNOWN)
+      def initialize(code, val, type = :UNKNOWN)
+        @field_code = code
         @value = val
         @type = type
       end
-      attr_accessor :value, :type
+      attr_accessor :field_code, :value, :type
 
       def request_body_format(for_update = nil)
         {value: @value}

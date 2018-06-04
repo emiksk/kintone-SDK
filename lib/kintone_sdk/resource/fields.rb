@@ -16,7 +16,7 @@ module KintoneSDK
 
       def []=(key, val)
         raise KintoneSDK::ReadOnlyError.new(key, @contents[key.to_s]&.type) if READONLY_FIELDS.include?(@contents[key.to_s]&.type)
-        @contents[key.to_s] = Field.create(val)
+        @contents[key.to_s] = Field.create(key.to_s, val)
       end
 
       def get_field(key)
@@ -24,11 +24,11 @@ module KintoneSDK
       end
 
       def set_field(key, value, type)
-        @contents[key.to_s] = Field.create(value, type.to_sym)
+        @contents[key.to_s] = Field.create(key.to_s, value, type.to_sym)
       end
 
       def field_codes
-        @contents.map { |k, v| v.type == :SUBTABLE ? [k, v.field_codes] : k }.flatten
+        @contents.map { |k, v| v.field_code }.flatten
       end
 
       def field_values
