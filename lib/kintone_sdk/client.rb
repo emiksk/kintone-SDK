@@ -76,7 +76,7 @@ module KintoneSDK
         end
 
         if params[:user] && params[:password]
-          headers[ 'X-Cybozu-Authorization'] = Base64.strict_encode64("#{params[:user]}:#{params[:password]}")
+          headers['X-Cybozu-Authorization'] = Base64.strict_encode64("#{params[:user]}:#{params[:password]}")
         elsif params[:token]
           headers['X-Cybozu-API-Token'] = params[:token]
         else

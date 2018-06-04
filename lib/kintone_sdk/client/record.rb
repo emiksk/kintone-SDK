@@ -18,7 +18,7 @@ module KintoneSDK
       end
 
       def get(app_id, record_id, options = {})
-        url = get_url(:get, options[:guest_space_id])
+        url = get_path(:get, options[:guest_space_id])
         response = @client.get(url, app: app_id, id: record_id)
         create_record_from_response(app_id, response.body)
       end
@@ -28,7 +28,7 @@ module KintoneSDK
           payload = record.request_body_format
         end
 
-        url = get_url(:post, options[:guest_space_id])
+        url = get_path(:post, options[:guest_space_id])
         @client.post(url, payload)
       end
 
@@ -39,13 +39,13 @@ module KintoneSDK
           payload = convert_for_kintone(app_id, record, options)
         end
 
-        url = get_url(:put, options[:guest_space_id])
+        url = get_path(:put, options[:guest_space_id])
         response = @client.put(url, payload)
         # FIXME: Must change revision in Record object
       end
 
       def delete(app_id, record_id, options = {})
-        url = get_url(:delete, options[:guest_space_id])
+        url = get_path(:delete, options[:guest_space_id])
         @client.delete(url, app: app_id, ids: [record_id])
       end
 
@@ -59,7 +59,7 @@ module KintoneSDK
 
       private
 
-      def get_url(method, guest_space_id = nil)
+      def get_path(method, guest_space_id = nil)
         if guest_space_id
           base_path = KintoneSDK::Client::PRODUCT_CODE +
                       "/guest" +
@@ -107,7 +107,7 @@ module KintoneSDK
             end
             { value: rows }
           else
-            {value: value}
+            { value: value }
           end
         end
       end
